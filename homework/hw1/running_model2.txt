@@ -1,0 +1,11 @@
+model {
+	for (i in 1:N) {
+		x[i] ~ dnorm(mu, tau)
+    x2[i] ~ dnorm(mu, tau2)
+	}
+	mu  ~ dnorm(prior_mean, prior_tau) # change this to dnorm(prior_mean and prior_tau)
+	mu2 ~ dnorm(prior_mean, prior_tau) # prior predictive
+	sigma <- sampling_sd # change this to be sampling_sd
+	tau <- pow(sigma, -2) # tau equal to 1/sigma^2
+  tau2 <- tau + prior_tau
+}

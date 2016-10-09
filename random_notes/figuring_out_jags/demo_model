@@ -1,0 +1,11 @@
+
+model
+{
+for(i in 1:N){
+y[i] ~ dnorm(mu,tau)
+}
+mu ~ dnorm(prior_mean, 1/(sampling_sd^2))
+sigma <- prior_sd
+tau <- 1/(sigma^2)
+}
+

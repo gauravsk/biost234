@@ -1,0 +1,133 @@
+---
+title: "Homework 2"
+author: "Gaurav Kandlikar"
+date: "October 5, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup dos}
+library(R2jags)
+library(lattice) # Needed for scatterplot matrix
+# Set working directory
+setwd("/home/gsk/grad/courses/UCLA/biost234/homework/lab2")
+getwd()
+
+# Save the data file to your working directory. 
+
+#READ IN DATA
+housing=read.table("housingdata2.txt")
+head(housing)   ## Always look at your data
+## Anything funny about any of the columns?
+## There are no column names!
+str(housing)
+colnames(housing) <- c("cost", "eaves", "windows", "yard", "roof")
+
+#SEPARATE X & Y
+y <- housing[,1]
+x <- as.matrix(housing[,2:5])
+
+## Remember: look at your data.  
+y
+head(x)
+```
+
+
+### Classical regression
+
+Before beginning our Bayesian analysis, we can conduct classical multiple linear regression:
+
+```{r classical regression}
+reg = lm(y~x)
+summary(reg) # classical regression
+```
+
+The yard and window quality seem to correlate with the contractor's estimates. We see a row of NAs for coefficients of roof, since all of the roofs in this dataset had a quality of 2- so, there is no variation in that measurement. 
+
+### Bayesian approach
+First we write out our model
+```{r write bayesian model}
+# sink("housingmodel.txt")
+cat("
+model
+{ 
+   for(i in 1:N) {
+	     y[i] ~ dnorm(mu[i] , tau )
+	     mu[i] <- beta0 + inprod(x[i,] , beta[] )
+		}
+	      
+	 beta0 ~ dnorm( mbeta0 , precbeta0) # mean and precision of beta0 (intercept) defined in R
+	 
+for (j in 1:K) {
+	 beta[j] ~ dnorm( m[j] , prec[j] ) # the prior for the four different betas will be provided through R
+                                     # in all models we will use mean beta values estimated in an old analysis 
+
+		}
+	   tau ~ dgamma( tau.a , tau.b )  # we tend to use gamma for tau because it is always non-negative
+                                    # we will weigh the priors differently in a few different models by 
+                                    # fidgeting with the precision in prior                                    
+	   sigma <- 1 / sqrt(tau)         # note that we use <- here since it's a simple calculation
+	}
+  ",fill = TRUE)
+# sink()
+```
+
+
+Now, we set up three different models:
+
+```{r define parameters and other jags inputs}
+
+# define some variables
+N = nrow(housing)
+K = ncol(x) # number of coefficients to estimate betas for
+m = c(1.6053, 1.2556, 2.3413, 3.6771)# mean betas from previous analysis
+
+dataA <- list(N=N, K=4, m = m, 
+              prec = c(.2164, .1105, .2061, .1337), tau.a=17,
+              tau.b = 1128, mbeta0= -5.682, precbeta0=.05464, x=x, y=y)
+
+dataB <- list(N=N, K=4, m=m, 
+            prec=c(.02774, .014160, .02642, .01714), tau.a=2.1795,
+            tau.b=144.6, mbeta0= -5.682, precbeta0=.007005, x=x, y=y)
+
+dataC <- list(N=N, K=4, m=m, 
+            prec=c(.005549, .002832, .005284, .003428), tau.a=.4359,
+            tau.b=28.92, mbeta0= -5.682, precbeta0=.00140, x=x, y=y)
+
+
+inits <- rep(list(list(beta0=0, beta=c(1,1,1,1),tau=1)),5) # 5 equal to the n.chains in jags call
+
+#DEFINE PARAMETERS TO MONITOR
+parameters <- c("beta0", "beta" , "tau", "sigma")
+```
+
+Then we run jags:  
+
+```{r run jags}
+#RUN THE JAGS PROGRAM, SAVING DATA TO LAB2.SIM
+lab2.simA <- jags (dataA, inits, parameters, "housingmodel.txt", n.chains=5, 
+	n.iter=5100, n.burnin=100, n.thin=1, DIC=FALSE) # DIC = F - deviance not calcuated
+lab2.simB <- jags (dataB, inits, parameters, "housingmodel.txt", n.chains=5, 
+	n.iter=5100, n.burnin=100, n.thin=1, DIC=FALSE)
+lab2.simC <- jags (dataC, inits, parameters, "housingmodel.txt", n.chains=5, 
+	n.iter=5100, n.burnin=100, n.thin=1, DIC=FALSE)
+
+lab2.sims = list(lab2.simA, lab2.simB, lab2.simC)
+
+knitr::kable(lab2.simA$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3)
+knitr::kable(lab2.simB$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3)
+knitr::kable(lab2.simC$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3)
+```
+
+## Question 2
+2. Give a table of inferences for the coefficient of roofs for the three priors. Briefly explain why it comes out as it does.
+
+```{r q2}
+temp3 <- t(sapply(lab2.sims, function(x) x$BUGSoutput$summary["beta[4]",c("mean", "sd")]))
+rownames(temp3) <- c("Model 1", "Model 2", "Model 3")
+knitr::kable(temp3)
+```
+
