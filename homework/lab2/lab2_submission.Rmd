@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r setup dos}
+```{r setup dos, message=F}
 library(R2jags)
 library(lattice) # Needed for scatterplot matrix
 # Set working directory
@@ -49,7 +49,7 @@ The yard and window quality seem to correlate with the contractor's estimates. W
 
 ### Bayesian approach
 First we write out our model
-```{r write bayesian model}
+```{r write bayesian model, eval = F}
 # sink("housingmodel.txt")
 cat("
 model
@@ -117,15 +117,19 @@ lab2.simC <- jags (dataC, inits, parameters, "housingmodel.txt", n.chains=5,
 
 lab2.sims = list(lab2.simA, lab2.simB, lab2.simC)
 
-knitr::kable(lab2.simA$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3)
-knitr::kable(lab2.simB$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3)
-knitr::kable(lab2.simC$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3)
+knitr::kable(lab2.simA$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3,
+             caption = "Parameter estimates from Model A (informative)")
+knitr::kable(lab2.simB$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3,
+             caption = "Parameter estimates from Model B (medium informative)")
+knitr::kable(lab2.simC$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3,
+             caption = "Parameter estimates from Model C (uninformative)")
 ```
 
 \clearpage
 
 ## Question 1  
-1. Summarize briefly the effects on all parameters of changing from prior A to B to C.
+1. Summarize briefly the effects on all parameters of changing from prior A to B to C.   
+
 For all priors, changing from A to B to C brought the point estimate (mean of posterior) closer to the likelihood estimates reported at the beginning of this document and increased the magnitude of the credibility intervals.
 
 ## Question 2
@@ -147,8 +151,8 @@ b. Which house is in the worst condition? Calculate the three futurefit, futureo
 
 First we write a new model:
 
-```{r q3 model}
-# sink("housingmodelq3.txt")
+```{r q3 model, eval = F}
+# sink("housingmodelq3.txt", eval = F)
 cat("
 model
 { 
@@ -177,12 +181,13 @@ for (j in 1:K) {
   ",fill = TRUE)
 # sink()
 
-inits <- rep(list(list(beta0=0, beta=c(1,1,1,1),tau=1, futureobs = 0)),5) # 5 equal to the n.chains in jags call
-parameters <- c("beta0", "beta" , "tau", "sigma", "futurefit", "futureobs", "futuretail")
 ```
 
 I will run this with Model A (most informative prior)
 ```{r}
+
+inits <- rep(list(list(beta0=0, beta=c(1,1,1,1),tau=1, futureobs = 0)),5) # 5 equal to the n.chains in jags call
+parameters <- c("beta0", "beta" , "tau", "sigma", "futurefit", "futureobs", "futuretail")
 dataA <- list(N=N, K=4, m = m, 
               prec = c(.2164, .1105, .2061, .1337), tau.a=17,
               tau.b = 1128, mbeta0= -5.682, precbeta0=.05464, x=x, y=y,
@@ -201,6 +206,7 @@ knitr::kable(lab2.simq3$BUGSoutput$summary[futures, for_table],
              caption = "Summary of predictions for a perfect house")
 ```
 
+We see that the best house is predicte to cost ~\$6000 to repair, unlike the "perfect" house in the dataset, which was estimated to cost \$18000
 
 b. Which house is in the worst condition? Calculate the three futurefit, futureobs and futuretail variables for this house and provide a formatted table.  
 By one measure, house 14 is the "worst", as it has the highest average score. Its scores are:
@@ -217,6 +223,10 @@ knitr::kable(lab2.simq3b$BUGSoutput$summary[futures, for_table],
 
 ```
 
+The worst house is predicted to cost ~\$18000 to repair.
+
+\clearpage
+
 ## Question 4
 4. For prior (C), what two coefficients (including the intercept) have the highest posterior correlation? Briefly explain why.
 
@@ -225,7 +235,7 @@ temp = apply(lab2.simC$BUGSoutput$sims.array, 3, unlist)
 lattice::splom(temp[1:5000,1:5],pch=".")	#	Scatterplot matrix of correlation plots
           # 25000 takes a long time. "." is a better character to plot with
 ```
-We can see in the plot above that beta0 and beta[4] (i.e. the estimates for intercept and coefficient for roof, respectively) are highly correlated with Prior C. This is because priors for both were very weak in this model \textbf{SAY MORE HERE!}
+We can see in the plot above that beta0 and beta[4] (i.e. the estimates for intercept and coefficient for roof, respectively) are highly correlated with Prior C. Since we don't have any variation in roof quality in our dataset, that value is pretty much treated as a constant number in this analysis, so that any combination of $\beta_4*roof + \beta_0$ yields the same constant in the regression model. We see the strong negative correlation between $\beta_0$ and $\beta_4$ for this reason. 
 
 ## Question 5
 5. Briefly interpret the three variables futurefit, futureobs, futuretail in your own words.  
@@ -238,12 +248,12 @@ We can see in the plot above that beta0 and beta[4] (i.e. the estimates for inte
 6. Suppose we pool the two data sets after the inflation correction. Also, the expert at the housing department told you he thought each unit increase in any rating scale ought to increase the cost by around $1000. You’re not sure that all coefficients should be positive. Suggest priors (all regression coefficients and for sigma^2) to use now. Write one or two sentences justifying your priors. 
 
 \begin{itemize}
-\item Intercept $\beta_{0}$ \~ No (-5.682, .007005)
-\item EAVES:  	$\beta_{1}$ \~ No (1, .2164)
-\item WINDOWS:	$\beta_{2}$ \~ No (1, .1105)
-\item YARDS:	$\beta_{3}$ \~ No (1, .2061)
-\item ROOF:    $\beta_{4}$ \~ No (1, .1337)  
-\item Tau:	$\tau$ \~ Gamma(17, 1128)
+\item Intercept  $\beta_{0}$ \textasciitilde  No (-5.682, .007005)
+\item EAVES:  $\beta_{1}$ \textasciitilde No (1, 1)
+\item WINDOWS: $\beta_{2}$ \textasciitilde No (1, 1)
+\item YARDS: $\beta_{3}$ \textasciitilde No (1, 1)
+\item ROOF: $\beta_{4}$ \textasciitilde No (1, 1)  
+\item Tau:  $\tau$ \textasciitilde Gamma(17, 1128)
 \end{itemize}
 
-Since the local housing expert thinks that each unit increase in any of the scales results in a ~$1000 increase in repair cost, I use 1 as the prior mean for all coefficients in this scenario. I also set the precision to 1 so that ~85% of my prior distribution is greater than zero, but there is still a fair amount of density in the priors for negative coefficients. 
+Since the local housing expert thinks that each unit increase in any of the scales results in a ~$1000 increase in repair cost, I use 1 as the prior mean for the coefficients $beta_0$, $beta_1$, $beta_2$, and $beta_3$ in this scenario. I also set the precision to 1 so that ~85% of my prior distribution's density is greater than zero, but there is still a fair amount of density in the priors for negative coefficients. I am not very confident about my prior knowledge for an intercept, so I will stick with an uninformative prior with mean 0 and precision 0.001; this will let the data influence the posterior distribution. Assuming that we double our dataset to have 80 samples now, I am proposing a prior for tau of being gamma-distributed with shape 37 (= 76 degrees of freedom/2) and scale 2434 (so that the mean $\approx$ 66).
