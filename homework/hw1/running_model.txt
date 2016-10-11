@@ -4,5 +4,5 @@ model {
 	}
 	mu ~ dnorm(prior_mean, prior_tau) # change this to dnorm(prior_mean and prior_tau)
 	sigma <- sampling_sd              # change this to be sampling_sd
-	tau <- pow(sigma, -2)             # tau equal to 1/sigma^2
+	tau <- 1/(sigma^2)             # tau equal to 1/sigma^2
 }

@@ -9,7 +9,8 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 options(digits = 3)
 library(R2jags)
-setwd("/home/gsk/grad/courses/UCLA/biost234/homework/hw1")
+#setwd("/Users/camilamedeiros/Documents/PhD/Coursework/M234-Bayesian/HW_1")
+setwd("~/grad/courses/UCLA/biost234/homework/hw1/")
 ```
 
 ## Question 1
@@ -122,16 +123,16 @@ legend("topleft", lty = c(2, 3, 4, 1), col = c("red", "blue", "darkgreen", "blac
 9. \textsc{9. Write R/WinBUGS programs to sample from the posterior of mu.}
 
 ```{r}
-# sink("running_model.txt")
+#sink("running_model.txt")
 cat("model {
 	for (i in 1:N) {
 		x[i] ~ dnorm(mu, tau)
 	}
 	mu ~ dnorm(prior_mean, prior_tau) # change this to dnorm(prior_mean and prior_tau)
 	sigma <- sampling_sd              # change this to be sampling_sd
-	tau <- pow(sigma, -2)             # tau equal to 1/sigma^2
+	tau <- 1/(sigma^2)             # tau equal to 1/sigma^2
 }", fill = TRUE)
-# sink()
+#sink()
 ```
 
 ```{r write the dumb thing}
@@ -145,7 +146,6 @@ prior_tau = 1/(prior_sd^2)
 jags.data = list("x", "N", "prior_mean", "sampling_sd", "prior_tau") 
 
 # initials
-
 jags.inits = function(){
     list("mu" = 0) # part of algorithm!
 }
@@ -153,6 +153,7 @@ jags.inits = function(){
 
 Now that we have set up the model, data, and parameters, we can run the model:
 ```{r run the stupid thing, eval = T}
+#sampling from the posterior
 hw1.sim = jags(jags.data, jags.inits, jags.params, 
               model.file = "running_model.txt", 
               n.chains = 3, n.iter = 11000, n.burnin = 1000)
@@ -169,34 +170,129 @@ knitr::kable(to_print)
 10. \textsc{Adapt your BUGS program to sample from the prior and prior predictive. Do this by not loading your data, rather, in loading the initial values, move the data y over to the init list instead. There is an example at the end of Homework 2 for a Poisson-gamma likelihood/prior. [Helpful step: set keyword DIC=F in the call to bugs, as WinBUGS can not calculate DIC for prior predictions.]}  
 
 ```{r}
-# sink("running_model2.txt")
-cat("model {
-	for (i in 1:N) {
-		x[i] ~ dnorm(mu, tau)
-    x2[i] ~ dnorm(mu, tau2)
-	}
-	mu  ~ dnorm(prior_mean, prior_tau) # change this to dnorm(prior_mean and prior_tau)
-	mu2 ~ dnorm(prior_mean, prior_tau) # prior predictive
-	sigma <- sampling_sd # change this to be sampling_sd
-	tau <- pow(sigma, -2) # tau equal to 1/sigma^2
-  tau2 <- tau + prior_tau
-}", fill = TRUE)
-# sink()
-
-```
-
-```{r eval = T}
-jags.data2 = list("N", "prior_mean", "sampling_sd", "prior_tau") 
-
-# initials
+#Sampling from the prior:
+# parameters
 jags.params = c("mu", "sigma", "tau")
 
-jags.inits2 = function(){
-    list("x" = x, "mu" = 0) # part of algorithm!
+# data
+x = runs$speed_sec_per_mi
+N = length(runs$speed_sec_per_mi)
+prior_tau = 1/(prior_sd)^2
+jags.data.prior = list("N", "prior_mean", "sampling_sd", "prior_tau") 
+
+# initials
+jags.inits_prior = function(){
+    list("mu"=0, "x"=x) # part of algorithm!
 }
 
-hw1.sim2 = jags(jags.data2, jags.inits2, jags.params, 
-              model.file = "running_model2.txt", 
-              n.chains = 3, n.iter = 11000, n.burnin = 1000, DIC = F)
+hw1.sim2 = jags(jags.data.prior, jags.inits_prior, jags.params, 
+              model.file = "running_model.txt", 
+              n.chains = 3, n.iter = 11000, n.burnin = 1000, DIC=F)
 
+
+to_print_prior <- hw1.sim2$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")]
+knitr::kable(to_print_prior)
 ```
+
+```{r}
+#Sampling from prior predictive
+# parameters
+jags.params = c("mu","tau", "sigma")
+
+# data
+x = runs$speed_sec_per_mi
+N = length(runs$speed_sec_per_mi)
+prior_tau = 1/((prior_sd^2)+(sampling_sd^2))
+jags.data_prior_predictive = list("N", "prior_mean", "sampling_sd", "prior_tau") 
+
+# initials
+jags.inits_prior_predictive = function(){
+    list("mu"= 0, "x"=x) # part of algorithm!
+}
+
+hw1.sim3 = jags(jags.data_prior_predictive, jags.inits_prior_predictive, jags.params, 
+              model.file = "running_model.txt", 
+              n.chains = 3, n.iter = 11000, n.burnin = 1000,
+              DIC=F)
+
+
+to_print_prior_predictive <- hw1.sim3$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")]
+knitr::kable(to_print_prior_predictive)
+```
+
+## Question 11   
+11. \textsc{Adapt your BUGS program to sample from the likelihood.}  
+
+```{r}
+###Sampling from likelihood
+# parameters
+jags.params = c("mu","tau", "sigma")
+
+# data
+x = runs$speed_sec_per_mi
+N = length(runs$speed_sec_per_mi)
+prior_tau = 1/(((prior_sd^2)/N))^2
+jags.data_likelihood = list("x", "N", "prior_mean", "sampling_sd", "prior_tau") 
+
+# initials
+jags.inits = function(){
+    list("mu"= 0) # part of algorithm!
+}
+
+hw1.sim4 = jags(jags.data_likelihood, jags.inits, jags.params, 
+              model.file = "running_model.txt", 
+              n.chains = 3, n.iter = 11000, n.burnin = 1000)
+
+
+to_print_likelihood <- hw1.sim4$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")]
+round(to_print_likelihood, digits= 4)
+knitr::kable(to_print_likelihood)
+```
+
+## Question 12   
+12.\textsc{Report your WinBUGS models and R code, data, and inits. Use at least samples of size 10000.} 
+\textsc{R code, model, data, and inits are reported in questions 9-11.}
+
+## Question 13  
+13.\textsc{Construct a table with means, sds and vars for the (i) posterior for mu,(ii) the prior for mu, (iii) the prior predictive for y, and (iv) the likelihood of mu from the WinBUGS output.}
+
+```{r}
+Posterior_mu   <- hw1.sim$BUGSoutput$summary[2, c("mean", "sd")]
+Prior_mu       <- hw1.sim2$BUGSoutput$summary[1,c("mean", "sd")]
+Prior_predictive_y <- hw1.sim3$BUGSoutput$summary[1,c("mean", "sd")]
+Likelihood_mu <- hw1.sim4$BUGSoutput$summary[2,c("mean", "sd")]
+
+to_print <- rbind(Posterior_mu, Prior_mu, Prior_predictive_y, Likelihood_mu)
+print(to_print)
+var <- as.matrix((to_print[,2])^2)
+results <- cbind(to_print, var)
+rownames(results) <- c("Posterior mu", "Prior mu", "Prior predictive y", "Likelihood mu$")
+colnames(results) <- c("Mean", "SD", "Variance")
+knitr::kable(results)
+```
+
+## Question 14  
+14.\textsc{Plot on a single plot the (i) posterior for mu, (ii) the prior for mu (iii) the prior predictive for y, and (iv) the likelihood of mu (suitably normalized so it looks like a density, ie a normal with mean y-bar and variance sigma2/n) all on the same graph. All from the WinBUGS output. Interpret the plot.}
+
+```{r}
+#Plot
+posterior = apply(hw1.sim$BUGSoutput$sims.array, 3, unlist)
+posterior <- posterior[,2]
+
+prior = apply(hw1.sim2$BUGSoutput$sims.array, 3, unlist)
+prior <- prior[,1]
+
+prior_predictive = apply(hw1.sim3$BUGSoutput$sims.array, 3, unlist)
+prior_predictive <- prior_predictive[,1]
+
+likelihood = apply(hw1.sim4$BUGSoutput$sims.array, 3, unlist)
+likelihood <- likelihood[,2]
+
+plot(density(posterior), main = "Probability densities", xlim= c(380, 600), ylim= c(0, 0.034), lwd = 2)
+lines(density(prior), lty = 2, lwd = 2, col = "red")
+lines(density(prior_predictive),lty = 3, lwd = 2, col = "blue")
+lines(density(likelihood),lty = 4, lwd = 2, col = "darkgreen")
+legend("topleft", lty = c(1, 2, 3), col = c("black", "red", "blue", "darkgreen"), lwd = 2, 
+       legend = c("Posterior","Prior", "Prior Predictive", "Likelihood"), bty = "n")
+```
+
