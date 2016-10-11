@@ -177,9 +177,8 @@ knitr::kable(to_print, caption = "Summary of posterior from JAGS run")
 jags.params = c("mu", "sigma", "tau")
 
 # data
-x = runs$speed_sec_per_mi
-N = length(runs$speed_sec_per_mi)
-prior_tau = 1/(prior_sd)^2
+prior_tau = 1/(prior_sd)^2 # same prior tau as before
+# Note that the data object 'x' is not part of the data list
 jags.data.prior = list("N", "prior_mean", "sampling_sd", "prior_tau") 
 
 # initials
@@ -202,9 +201,8 @@ knitr::kable(to_print_prior, caption = "Summary of prior from JAGS run")
 jags.params = c("mu","tau", "sigma")
 
 # data
-x = runs$speed_sec_per_mi
-N = length(runs$speed_sec_per_mi)
-prior_tau = 1/((prior_sd^2)+(sampling_sd^2))
+prior_tau = 1/((prior_sd^2)+(sampling_sd^2)) # prior tau updated to be the prior predictive
+# Note that the data object 'x' is not part of the data list
 jags.data_prior_predictive = list("N", "prior_mean", "sampling_sd", "prior_tau") 
 
 # initials
@@ -231,9 +229,8 @@ knitr::kable(to_print_prior_predictive,  caption = "Summary of prior predictive 
 jags.params = c("mu","tau", "sigma")
 
 # data
-x = runs$speed_sec_per_mi
-N = length(runs$speed_sec_per_mi)
-prior_tau = 1/(((prior_sd^2)/N))^2
+prior_tau = 1/(((prior_sd^2)/N))^2 # variance of the likelihood used here
+# Note that the data object 'x' IS part of the data list:
 jags.data_likelihood = list("x", "N", "prior_mean", "sampling_sd", "prior_tau") 
 
 # initials
