@@ -7,22 +7,22 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-options(digits = 3)
+options(digits = 6, scipen = 999)
 library(R2jags)
 #setwd("/Users/camilamedeiros/Documents/PhD/Coursework/M234-Bayesian/HW_1")
 setwd("~/grad/courses/UCLA/biost234/homework/hw1/")
 ```
 
 ## Question 1
-1. \textsc{Explain what your measurements will be.}  
+1. \textsc{  Explain what your measurements will be.}  
 We will be exploring Gaurav's running speeds from his last ten runs.  
 
 ## Question 2  
-2. \textsc{Deciding on some priors}  
-We estimate a mean speed ($\mu_{0}$) of 8 minutes and 10 seconds (i.e. 490 seconds) per mile. The basis for this is that I generally try to run 8-minute (480 seconds) miles, and I know that over the past ~2 weeks I've been running slower due to a weird knee. We estimate a standard deviation ($\tau$) of 30 seconds because I've done both road runs and treadmill runs, and I know that I run somewhat differently in the two conditions.  
+2. \textsc{  Deciding on some priors}  
+We estimate a mean speed ($\mu_{0}$) of 8 minutes and 10 seconds (i.e. 490 seconds) per mile. The basis for this is that on good days, I (Gaurav) generally try to run 8-minute (480 seconds) miles, and I know that over the past ~2 weeks I've been running slower due to a weird knee. We estimate a standard deviation ($\tau$) of 30 seconds because I've done both road runs and treadmill runs, and I know that I run somewhat differently in the two conditions.  
 
 ## Question 3  
-3. \textsc{Report the data and sample mean and variance (n-1) denominator.}  
+3. \textsc{  Report the data and sample mean and variance (n-1) denominator.}  
 
 ```{r}
 runs <- read.csv("running_data.csv")
@@ -34,17 +34,21 @@ sample_mean # get the sample mean
 sample_var <- sum((runs$speed_sec_per_mi-sample_mean)^2)/(nrow(runs)-1) 
 ```
 
-The mean of our sample is `r sample_mean`; the standard deviation of our sample is `r sample_var`.  
+The mean of our sample is `r sample_mean`; the variance of our sample is `r sample_var`.  
 
 ## Question 4  
-4. \textsc{Now specify the sampling standard deviation. Since we are doing a one parameter model, and since this value is usually not known, we need to do something because we are working with such a simple model.}  
+4. \textsc{  Now specify the sampling standard deviation. Since we are doing a one parameter model, and since this value is usually not known, we need to do something because we are working with such a simple model.}  
 
 We know that the speed estimates from the run tracking app are fairly accurate: the speeds from the app have closely matched my race speeds recorded independently. We don't think that the sampling standard deviation is higher than the sample $\sigma$ of `r sqrt(sample_var)`, so we will proceed in the analysis assuming the sampling standard deviation is the same as the sd of the data .
 
 ## Question 5  
-5. \textsc{Calculate the posterior mean, variance, and SD.}  
+5. \textsc{  Calculate the posterior mean, variance, and SD.}  
 
-WORDS! Write the formulas for posterior mean etc. 
+Because we are working with a normal-normal model (mean is normally distributed with, in this case, a known sampling error), we can use the following formulae to collect posterior mean and variance:  
+
+$$\bar{\theta} = \frac{\frac{n}{\sigma^2}}{\frac{n}{\sigma^2}+\frac{1}{\tau^2}}\bar{y} + \frac{\frac{1}{\tau^2}}{\frac{n}{\sigma^2}+\frac{1}{\tau^2}}\theta_0$$
+
+$$\text{var}(\theta \mid \text{data}) = \left(\frac{n}{\sigma^2}+\frac{1}{\tau^2}\right)^{-1}$$
 
 ```{r}
 prior_mean = 490 #seconds
@@ -54,7 +58,7 @@ n = nrow(runs)
 ybar = sample_mean
 
 # calculate the posterior mean using the formula
-posterior_mean <- (n/(sampling_sd^2))/((n/sampling_sd^2)+(1/prior_sd^2))*ybar +
+posterior_mean <- (n/(sampling_sd^2))/((n/sampling_sd^2)+(1/prior_sd^2)) * ybar +
   (1/prior_sd^2)/((n/sampling_sd^2)+(1/prior_sd^2)) * prior_mean
 
 # calculate the posterior variance using the formula
@@ -67,20 +71,18 @@ The posterior var is $V$ = `r posterior_var`;
 The posterior sd is $sd$ = `r posterior_sd`.  
 
 ## Question 6  
-6. \textsc{ The prior predictive density is the density that you predict for a single observation before seeing any data.}  
+6. \textsc{  The prior predictive density is the density that you predict for a single observation before seeing any data.}  
 It sure is!  
 ```{r}
-prior_mean
-prior_sd
-sampling_sd
+prior_mean; prior_sd; sampling_sd
 
-plot(density(rnorm(1000, prior_mean, prior_sd^2+sampling_sd^2)),
+# Sample from a normal distribution with the parameters above
+plot(density(rnorm(1000, prior_mean, sqrt(prior_sd^2+sampling_sd^2))),
      main = "prior predictive density")
-
 ```
 
 ## Question 7  
-7. \textsc{ Construct a table with means, sds and vars for the (i) posterior for mu, (ii) the prior for mu, (iii) the prior predictive for y, and (iv) the likelihood of mu.}  
+7. \textsc{  Construct a table with means, sds and vars for the (i) posterior for mu, (ii) the prior for mu, (iii) the prior predictive for y, and (iv) the likelihood of mu.}  
 
 ```{r}
 posterior_row  <- c(posterior_mean, posterior_sd, posterior_var)
@@ -92,12 +94,12 @@ likelihood_row <- c(sample_mean, sqrt(sample_var/n), sample_var/n)
 to_print <- rbind(posterior_row, prior_row, prior_pred_row, likelihood_row)
 rownames(to_print) <- c("Posterior", "Prior", "Prior Predictive", "Likelihood")
 colnames(to_print) <- c("Mean", "SD", "Variance")
-knitr::kable(to_print)
+knitr::kable(to_print, caption = "Posterior, Prior, Prior Predictive, and Likelihood calculated from their definitions")
 ```
 
 
 ## Question 8  
-8. \textsc{Plot on a single plot the (i) posterior for mu, (ii) the prior for mu, (iii) the prior predictive for y, and (iv) the likelihood of mu (suitably normalized so it looks like a density, ie a normal with mean y-bar and variance sigma2 /n) all on the same graph. Interpret the plot.}
+8. \textsc{  Plot on a single plot the (i) posterior for mu, (ii) the prior for mu, (iii) the prior predictive for y, and (iv) the likelihood of mu (suitably normalized so it looks like a density, ie a normal with mean y-bar and variance sigma2 /n) all on the same graph. Interpret the plot.}
 
 ```{r}
 
@@ -107,7 +109,7 @@ prior_pred_vec <- rnorm(10000, prior_mean, sqrt(prior_sd^2+sampling_sd^2))
 likelihood_vec <- rnorm(10000, sample_mean, sqrt(sample_var/n))
 
 plot(density(prior_vec), lty = 2, col = "red", main = "Probability densities",
-     ylim = c(0, 0.034), lwd = 2)
+     ylim = c(0, 0.034), lwd = 2, xlim = c(350, 600))
 lines(density(posterior_vec), lwd = 2)
 lines(density(prior_pred_vec), col = "blue", lty = 3, lwd = 2)
 lines(density(likelihood_vec), col = "darkgreen", lty = 4, lwd = 2)
@@ -115,12 +117,12 @@ legend("topleft", lty = c(2, 3, 4, 1), col = c("red", "blue", "darkgreen", "blac
        legend = c("Prior", "Prior Predictive", "Likelihood", "Posterior"), bty = "n")
 ```
 
-**Interpretation of plot**:  The posterior distribution of mean running speed is in between the prior mean and the likelihood estimate; in other words, the posterior is a compromise between the likelihood and the prior, which shrank the likelihood. The prior predictive has a mean equal to the prior mean but has a much wider distribution, which comes from our uncertainty in measurements as well as the prior estimate for variation in running speed. Our posterior distribution is quite similar to the likelihood distribution, which happens because the weight given to our prior mean is lower than the weight given to the sample mean in the posterior calculation. 
+**Interpretation of plot**:  The posterior distribution of mean running speed is in between the prior mean and the likelihood estimate; in other words, the posterior is a compromise between the likelihood and the prior, which shrank the likelihood. The prior predictive has a mean equal to the prior mean but has a much wider distribution, which comes from our uncertainty in measurements as well as the prior estimate for variation in running speed. Our posterior distribution is quite similar to the likelihood distribution, which happens because the weight given to our prior mean is lower than the weight given to the sample mean in the posterior calculation. Practically, this means that I (Gaurav) have been running much slower than I thought over the past three weeks or so- my average speed is about twenty seconds a mile slower than I thought. Time to fix that! 
 
 
 ## Question 9  
 
-9. \textsc{9. Write R/WinBUGS programs to sample from the posterior of mu.}
+9. \textsc{  Write R/WinBUGS programs to sample from the posterior of mu.}
 
 ```{r}
 #sink("running_model.txt")
@@ -135,7 +137,7 @@ cat("model {
 #sink()
 ```
 
-```{r write the dumb thing}
+```{r write the model}
 # parameters
 jags.params = c("mu", "sigma", "tau")
 
@@ -152,7 +154,7 @@ jags.inits = function(){
 ```
 
 Now that we have set up the model, data, and parameters, we can run the model:
-```{r run the stupid thing, eval = T}
+```{r run the model, eval = T}
 #sampling from the posterior
 hw1.sim = jags(jags.data, jags.inits, jags.params, 
               model.file = "running_model.txt", 
@@ -163,7 +165,7 @@ We can summarize the output of the model:
 
 ```{r}
 to_print <- hw1.sim$BUGSoutput$summary[2:4,c("mean", "sd", "2.5%", "97.5%")]
-knitr::kable(to_print)
+knitr::kable(to_print, caption = "Summary of posterior from JAGS run")
 ```
 
 ## Question 10  
@@ -191,7 +193,7 @@ hw1.sim2 = jags(jags.data.prior, jags.inits_prior, jags.params,
 
 
 to_print_prior <- hw1.sim2$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")]
-knitr::kable(to_print_prior)
+knitr::kable(to_print_prior, caption = "Summary of prior from JAGS run")
 ```
 
 ```{r}
@@ -217,11 +219,11 @@ hw1.sim3 = jags(jags.data_prior_predictive, jags.inits_prior_predictive, jags.pa
 
 
 to_print_prior_predictive <- hw1.sim3$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")]
-knitr::kable(to_print_prior_predictive)
+knitr::kable(to_print_prior_predictive,  caption = "Summary of prior predictive from JAGS run")
 ```
 
 ## Question 11   
-11. \textsc{Adapt your BUGS program to sample from the likelihood.}  
+11. \textsc{  Adapt your BUGS program to sample from the likelihood.}  
 
 ```{r}
 ###Sampling from likelihood
@@ -245,16 +247,15 @@ hw1.sim4 = jags(jags.data_likelihood, jags.inits, jags.params,
 
 
 to_print_likelihood <- hw1.sim4$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")]
-round(to_print_likelihood, digits= 4)
-knitr::kable(to_print_likelihood)
+knitr::kable(to_print_likelihood, caption = "Summary of likelihood from JAGS run")
 ```
 
 ## Question 12   
-12.\textsc{Report your WinBUGS models and R code, data, and inits. Use at least samples of size 10000.} 
+12.\textsc{  Report your WinBUGS models and R code, data, and inits. Use at least samples of size 10000.} 
 \textsc{R code, model, data, and inits are reported in questions 9-11.}
 
 ## Question 13  
-13.\textsc{Construct a table with means, sds and vars for the (i) posterior for mu,(ii) the prior for mu, (iii) the prior predictive for y, and (iv) the likelihood of mu from the WinBUGS output.}
+13.\textsc{  Construct a table with means, sds and vars for the (i) posterior for mu,(ii) the prior for mu, (iii) the prior predictive for y, and (iv) the likelihood of mu from the WinBUGS output.}
 
 ```{r}
 Posterior_mu   <- hw1.sim$BUGSoutput$summary[2, c("mean", "sd")]
@@ -266,29 +267,31 @@ to_print <- rbind(Posterior_mu, Prior_mu, Prior_predictive_y, Likelihood_mu)
 print(to_print)
 var <- as.matrix((to_print[,2])^2)
 results <- cbind(to_print, var)
-rownames(results) <- c("Posterior mu", "Prior mu", "Prior predictive y", "Likelihood mu$")
+rownames(results) <- c("Posterior", "Prior", "Prior predictive", "Likelihood")
 colnames(results) <- c("Mean", "SD", "Variance")
-knitr::kable(results)
+knitr::kable(results, caption = "Posterior, Prior, Prior Predictive, and Likelihood from JAGS simulations")
 ```
 
 ## Question 14  
-14.\textsc{Plot on a single plot the (i) posterior for mu, (ii) the prior for mu (iii) the prior predictive for y, and (iv) the likelihood of mu (suitably normalized so it looks like a density, ie a normal with mean y-bar and variance sigma2/n) all on the same graph. All from the WinBUGS output. Interpret the plot.}
+14.\textsc{  Plot on a single plot the (i) posterior for mu, (ii) the prior for mu (iii) the prior predictive for y, and (iv) the likelihood of mu (suitably normalized so it looks like a density, ie a normal with mean y-bar and variance sigma2/n) all on the same graph. All from the WinBUGS output. Interpret the plot.}
 
 ```{r}
-#Plot
+# Extract the posterior from the BUGS run
 posterior = apply(hw1.sim$BUGSoutput$sims.array, 3, unlist)
 posterior <- posterior[,2]
-
+# Extract the prior from the BUGS run
 prior = apply(hw1.sim2$BUGSoutput$sims.array, 3, unlist)
 prior <- prior[,1]
 
+# Extract the prior predictive from the BUGS run
 prior_predictive = apply(hw1.sim3$BUGSoutput$sims.array, 3, unlist)
 prior_predictive <- prior_predictive[,1]
 
+# Extract the likelihood from the BUGS run
 likelihood = apply(hw1.sim4$BUGSoutput$sims.array, 3, unlist)
 likelihood <- likelihood[,2]
 
-plot(density(posterior), main = "Probability densities", xlim= c(380, 600), ylim= c(0, 0.034), lwd = 2)
+plot(density(posterior), main = "Probability densities", xlim= c(350, 600), ylim= c(0, 0.034), lwd = 2)
 lines(density(prior), lty = 2, lwd = 2, col = "red")
 lines(density(prior_predictive),lty = 3, lwd = 2, col = "blue")
 lines(density(likelihood),lty = 4, lwd = 2, col = "darkgreen")
@@ -296,3 +299,4 @@ legend("topleft", lty = c(1, 2, 3), col = c("black", "red", "blue", "darkgreen")
        legend = c("Posterior","Prior", "Prior Predictive", "Likelihood"), bty = "n")
 ```
 
+**Interpretation of the plot**: As expected this plot is identical (more or less) to the plot generated from the same distributions in Question 8. As before, we see that the posterior distribution represents something of a compromise between the prior and likelihood distributions. Practically, this means that I (Gaurav) have been running much slower than I thought over the past three weeks or so- my average speed is about twenty seconds a mile slower than I thought. Time to fix that! 
