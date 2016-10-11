@@ -122,12 +122,128 @@ knitr::kable(lab2.simB$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], di
 knitr::kable(lab2.simC$BUGSoutput$summary[,c("mean", "sd", "2.5%", "97.5%")], digits = 3)
 ```
 
+\clearpage
+
+## Question 1  
+1. Summarize briefly the effects on all parameters of changing from prior A to B to C.
+For all priors, changing from A to B to C brought the point estimate (mean of posterior) closer to the likelihood estimates reported at the beginning of this document and increased the magnitude of the credibility intervals.
+
 ## Question 2
 2. Give a table of inferences for the coefficient of roofs for the three priors. Briefly explain why it comes out as it does.
 
 ```{r q2}
-temp3 <- t(sapply(lab2.sims, function(x) x$BUGSoutput$summary["beta[4]",c("mean", "sd")]))
-rownames(temp3) <- c("Model 1", "Model 2", "Model 3")
-knitr::kable(temp3)
+temp3 <- t(sapply(lab2.sims, function(x) x$BUGSoutput$summary["beta[4]",
+                                                              c("mean", "sd", "2.5%", "97.5%")]))
+rownames(temp3) <- c("Model A", "Model B", "Model C")
+knitr::kable(temp3, caption = "Estimates of Roof coefficient under three priors")
 ```
 
+In our dataset there is no variation in the roof parameter across samples, so as we place less and less emphasis on our prior (moving from models A to B to C), our estimate of $\beta_{roof}$ gets wider and more centered on zero. 
+
+
+## Question 3  
+3. For one of the three priors:   
+b. Which house is in the worst condition? Calculate the three futurefit, futureobs and futuretail variables for this house and provide a formatted table.
+
+First we write a new model:
+
+```{r q3 model}
+# sink("housingmodelq3.txt")
+cat("
+model
+{ 
+   for(i in 1:N) {
+	     y[i] ~ dnorm(mu[i] , tau )
+	     mu[i] <- beta0 + inprod(x[i,] , beta[] )
+		}
+	      
+	 beta0 ~ dnorm( mbeta0 , precbeta0) # mean and precision of beta0 (intercept) defined in R
+	 
+for (j in 1:K) {
+	 beta[j] ~ dnorm( m[j] , prec[j] ) # the prior for the four different betas will be provided through R
+                                     # in all models we will use mean beta values estimated in an old analysis 
+
+		}
+	   tau ~ dgamma( tau.a , tau.b )  # we tend to use gamma for tau because it is always non-negative
+                                    # we will weigh the priors differently in a few different models by 
+                                    # fidgeting with the precision in prior                                    
+	   sigma <- 1 / sqrt(tau)         # note that we use <- here since it's a simple calculation
+    futurefit <- beta0 + beta[1]*fut[1] + beta[2]*fut[2] + beta[3]*fut[3] + beta[4]*fut[4]
+        # note that I made fut[] be an input vector so we don't need to rewrite 
+        # new models every time we want to fit future for a different house
+    futureobs ~ dnorm(futurefit, tau)
+    futuretail <- beta0 + beta[1]*fut[1] + beta[2]*fut[2] + beta[3]*fut[3] + beta[4]*fut[4] + 1.645*sigma
+	}
+  ",fill = TRUE)
+# sink()
+
+inits <- rep(list(list(beta0=0, beta=c(1,1,1,1),tau=1, futureobs = 0)),5) # 5 equal to the n.chains in jags call
+parameters <- c("beta0", "beta" , "tau", "sigma", "futurefit", "futureobs", "futuretail")
+```
+
+I will run this with Model A (most informative prior)
+```{r}
+dataA <- list(N=N, K=4, m = m, 
+              prec = c(.2164, .1105, .2061, .1337), tau.a=17,
+              tau.b = 1128, mbeta0= -5.682, precbeta0=.05464, x=x, y=y,
+              fut = c(1,1,2,2)) # added a futures line here for the model
+
+lab2.simq3 <- jags (dataA, inits, parameters, "housingmodelq3.txt", n.chains=5, 
+	n.iter=5100, n.burnin=100, n.thin=1, DIC=FALSE) # DIC = F - deviance not calcuated
+```
+
+a. Show summaries of the futurefit, futureobs, futuretail in a properly formatted table for the house in perfect condition.  
+
+```{r}
+futures <- c("futurefit", "futureobs", "futuretail")
+for_table <- c("mean", "sd", "2.5%", "97.5%")
+knitr::kable(lab2.simq3$BUGSoutput$summary[futures, for_table],
+             caption = "Summary of predictions for a perfect house")
+```
+
+
+b. Which house is in the worst condition? Calculate the three futurefit, futureobs and futuretail variables for this house and provide a formatted table.  
+By one measure, house 14 is the "worst", as it has the highest average score. Its scores are:
+```{r}
+x[14,]
+dataA <- list(N=N, K=4, m = m, 
+              prec = c(.2164, .1105, .2061, .1337), tau.a=17,
+              tau.b = 1128, mbeta0= -5.682, precbeta0=.05464, x=x, y=y,
+              fut = x[14,]) # futures for house 14
+lab2.simq3b <- jags (dataA, inits, parameters, "housingmodelq3.txt", n.chains=5, 
+	n.iter=5100, n.burnin=100, n.thin=1, DIC=FALSE) # DIC = F - deviance not calcuated
+knitr::kable(lab2.simq3b$BUGSoutput$summary[futures, for_table],
+             caption = "Summary of predictions for the worst house")
+
+```
+
+## Question 4
+4. For prior (C), what two coefficients (including the intercept) have the highest posterior correlation? Briefly explain why.
+
+```{r}
+temp = apply(lab2.simC$BUGSoutput$sims.array, 3, unlist)
+lattice::splom(temp[1:5000,1:5],pch=".")	#	Scatterplot matrix of correlation plots
+          # 25000 takes a long time. "." is a better character to plot with
+```
+We can see in the plot above that beta0 and beta[4] (i.e. the estimates for intercept and coefficient for roof, respectively) are highly correlated with Prior C. This is because priors for both were very weak in this model \textbf{SAY MORE HERE!}
+
+## Question 5
+5. Briefly interpret the three variables futurefit, futureobs, futuretail in your own words.  
+
+`futurefit` is the mean of the distribution that is used to estimate the cost to fix some unknown house.  
+`futureobs` is a sample from the distribution of predictions for the cost estimate; the distribution has mean `futurefit` and precision $\tau$.  
+`futuretail` is the upper limit of the credible interval around the value reported by `futureobs`; we can similarly calculate the lower bound of the interval.
+
+## Question 6  
+6. Suppose we pool the two data sets after the inflation correction. Also, the expert at the housing department told you he thought each unit increase in any rating scale ought to increase the cost by around $1000. You’re not sure that all coefficients should be positive. Suggest priors (all regression coefficients and for sigma^2) to use now. Write one or two sentences justifying your priors. 
+
+\begin{itemize}
+\item Intercept $\beta_{0}$ \~ No (-5.682, .007005)
+\item EAVES:  	$\beta_{1}$ \~ No (1, .2164)
+\item WINDOWS:	$\beta_{2}$ \~ No (1, .1105)
+\item YARDS:	$\beta_{3}$ \~ No (1, .2061)
+\item ROOF:    $\beta_{4}$ \~ No (1, .1337)  
+\item Tau:	$\tau$ \~ Gamma(17, 1128)
+\end{itemize}
+
+Since the local housing expert thinks that each unit increase in any of the scales results in a ~$1000 increase in repair cost, I use 1 as the prior mean for all coefficients in this scenario. I also set the precision to 1 so that ~85% of my prior distribution is greater than zero, but there is still a fair amount of density in the priors for negative coefficients. 

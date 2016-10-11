@@ -1,0 +1,26 @@
+
+model
+{ 
+   for(i in 1:N) {
+	     y[i] ~ dnorm(mu[i] , tau )
+	     mu[i] <- beta0 + inprod(x[i,] , beta[] )
+		}
+	      
+	 beta0 ~ dnorm( mbeta0 , precbeta0) # mean and precision of beta0 (intercept) defined in R
+	 
+for (j in 1:K) {
+	 beta[j] ~ dnorm( m[j] , prec[j] ) # the prior for the four different betas will be provided through R
+                                     # in all models we will use mean beta values estimated in an old analysis 
+
+		}
+	   tau ~ dgamma( tau.a , tau.b )  # we tend to use gamma for tau because it is always non-negative
+                                    # we will weigh the priors differently in a few different models by 
+                                    # fidgeting with the precision in prior                                    
+	   sigma <- 1 / sqrt(tau)         # note that we use <- here since it's a simple calculation
+    futurefit <- beta0 + beta[1]*fut[1] + beta[2]*fut[2] + beta[3]*fut[3] + beta[4]*fut[4]
+        # note that I made fut[] be an input vector so we don't need to rewrite 
+        # new models every time we want to fit future for a different house
+    futureobs ~ dnorm(futurefit, tau)
+    futuretail <- beta0 + beta[1]*fut[1] + beta[2]*fut[2] + beta[3]*fut[3] + beta[4]*fut[4] + 1.645*sigma
+	}
+  
