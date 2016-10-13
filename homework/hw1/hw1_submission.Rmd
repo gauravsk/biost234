@@ -19,7 +19,7 @@ We will be exploring Gaurav's running speeds from his last ten runs.
 
 ## Question 2  
 \textsc{Deciding on some priors}  
-We estimate a mean speed ($\mu_{0}$) of 8 minutes and 10 seconds (i.e. 490 seconds) per mile. The basis for this is that on good days, I (Gaurav) generally try to run 8-minute (480 seconds) miles, and I know that over the past ~2 weeks I've been running slower due to a weird knee. We estimate a standard deviation ($\tau$) of 30 seconds because I've done both road runs and treadmill runs, and I know that I run somewhat differently in the two conditions.  
+We estimate a mean speed ($\mu_{0}$) of 8 minutes and 10 seconds (i.e. 490 seconds) per mile. The basis for this is that on good days, I (Gaurav) generally try to run 8-minute (480 seconds) miles, and I know that over the past ~2 weeks I've been running slower due to a weird knee. We estimate a prior standard deviation ($\tau$) of 30 seconds because I've done both road runs and treadmill runs, and I know that I run somewhat differently in the two conditions.  
 
 ## Question 3  
 \textsc{Report the data and sample mean and variance (n-1) denominator.}  
@@ -112,7 +112,7 @@ prior_vec <- rnorm(10000, prior_mean, prior_sd)
 prior_pred_vec <- rnorm(10000, prior_mean, sqrt(prior_sd^2+sampling_sd^2))
 likelihood_vec <- rnorm(10000, sample_mean, sqrt(sample_var/n))
 
-plot(density(prior_vec), lty = 2, col = "red", main = "Probability densities",
+plot(density(prior_vec), lty = 2, col = "red", main = "Probability densities from definitions",
      ylim = c(0, 0.034), lwd = 2, xlim = c(350, 600),
      xlab = "speed (seconds per mile)")
 lines(density(posterior_vec), lwd = 2)
@@ -122,7 +122,7 @@ legend("topleft", lty = c(2, 3, 4, 1), col = c("red", "blue", "darkgreen", "blac
        legend = c("Prior", "Prior Predictive", "Likelihood", "Posterior"), bty = "n")
 ```
 
-**Interpretation of plot**:  The posterior distribution of mean running speed is in between the prior mean and the likelihood estimate; in other words, the posterior is a compromise between the likelihood and the prior, which shrank the likelihood. The prior predictive has a mean equal to the prior mean but has a much wider distribution, which comes from our uncertainty in measurements as well as the prior estimate for variation in running speed. Our posterior distribution is quite similar to the likelihood distribution, which happens because the weight given to our prior mean is lower than the weight given to the sample mean in the posterior calculation. Practically, this means that I (Gaurav) have been running much slower than I thought over the past three weeks or so- my average speed is about twenty seconds a mile slower than I thought. Time to fix that! 
+**Interpretation of plot**:  The posterior distribution of mean running speed is in between the prior mean and the likelihood estimate; in other words, the posterior is a compromise between the likelihood and the prior, which shrank the likelihood. The prior predictive has a mean equal to the prior mean but has a much wider distribution, which comes from our uncertainty in measurements as well as the prior estimate for variation in running speed. Our posterior distribution is quite similar to the likelihood distribution, which happens because the weight given to our prior mean is lower than the weight given to the sample mean in the posterior calculation. Practically, this means that I have been running much slower than I thought over the past three weeks or so- my average speed has been about twenty seconds a mile slower than I thought. Time to fix that! 
 
 *note: code available in appendix*
 
@@ -306,8 +306,8 @@ prior_predictive <- prior_predictive[,1]
 likelihood = apply(hw1.sim4$BUGSoutput$sims.array, 3, unlist)
 likelihood <- likelihood[,2]
 
-plot(density(posterior), main = "Probability densities", xlim= c(350, 600), ylim= c(0, 0.034), lwd = 2,
-     xlab = "Second (seconds per mile)")
+plot(density(posterior), main = "Probability densities from JAGS simulations", xlim= c(350, 600), ylim= c(0, 0.034), lwd = 2,
+     xlab = "speed (seconds per mile)")
 lines(density(prior), lty = 2, lwd = 2, col = "red")
 lines(density(prior_predictive),lty = 3, lwd = 2, col = "blue")
 lines(density(likelihood),lty = 4, lwd = 2, col = "darkgreen")
@@ -315,7 +315,7 @@ legend("topleft", lty = c(1, 2, 3, 4), col = c("black", "red", "blue", "darkgree
        legend = c("Posterior","Prior", "Prior Predictive", "Likelihood"), bty = "n")
 ```
 
-**Interpretation of the plot**: As expected this plot is identical (more or less) to the plot generated from the same distributions in Question 8. As before, we see that the posterior distribution represents something of a compromise between the prior and likelihood distributions. Practically, this means that I (Gaurav) have been running much slower than I thought over the past three weeks or so- my average speed is about twenty seconds a mile slower than I thought. Time to fix that! 
+**Interpretation of the plot**: As expected this plot is identical (more or less) to the plot generated from the same distributions in Question 8. As before, we see that the posterior distribution represents something of a compromise between the prior and likelihood distributions. Practically, this means that I have been running much slower than I thought over the past three weeks or so- my average speed has been about twenty seconds a mile slower than I thought. Time to fix that! 
 
 *note: code available in appendix*
 
@@ -391,7 +391,7 @@ prior_predictive <- prior_predictive[,1]
 likelihood = apply(hw1.sim4$BUGSoutput$sims.array, 3, unlist)
 likelihood <- likelihood[,2]
 
-plot(density(posterior), main = "Probability densities", xlim= c(350, 600), ylim= c(0, 0.034), lwd = 2,
+plot(density(posterior), main = "Probability densities from JAGS sumilations", xlim= c(350, 600), ylim= c(0, 0.034), lwd = 2,
      xlab = "seconds per mile")
 lines(density(prior), lty = 2, lwd = 2, col = "red")
 lines(density(prior_predictive),lty = 3, lwd = 2, col = "blue")
