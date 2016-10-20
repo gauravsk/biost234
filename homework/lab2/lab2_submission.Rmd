@@ -184,7 +184,7 @@ for (j in 1:K) {
 ```
 
 I will run this with Model A (most informative prior)
-```{r}
+```{r, echo = F}
 
 inits <- rep(list(list(beta0=0, beta=c(1,1,1,1),tau=1, futureobs = 0)),5) # 5 equal to the n.chains in jags call
 parameters <- c("beta0", "beta" , "tau", "sigma", "futurefit", "futureobs", "futuretail")
@@ -199,7 +199,7 @@ lab2.simq3 <- jags (dataA, inits, parameters, "housingmodelq3.txt", n.chains=5,
 
 a. Show summaries of the futurefit, futureobs, futuretail in a properly formatted table for the house in perfect condition.  
 
-```{r}
+```{r, echo = F}
 futures <- c("futurefit", "futureobs", "futuretail")
 for_table <- c("mean", "sd", "2.5%", "97.5%")
 knitr::kable(lab2.simq3$BUGSoutput$summary[futures, for_table],
