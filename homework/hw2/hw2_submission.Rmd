@@ -31,7 +31,7 @@ setwd("~/grad/courses/UCLA/biost234/homework/hw2")
 
 ### 1d:  In the prior gamma(a, b), which parameter acts like a prior sample size? (Hint: look at the posterior from problem (1c), how does n enter into the posterior density?) You will need this answer inthe second part of problem 1(g)iv or you will do that problem incorrectly.
 
-In the prior gamma(a, b), the parameter b approximates the prior sample size $s_0$. This is because the gamma prior for lambda when we have $\textbf{Y} = [y_1, y_2, ... y_n]$, $b = b_0 + n$. 
+In the prior gamma(a, b), the parameter $\beta$ approximates the prior sample size $s_0$. This is because the gamma prior for lambda when we have $\textbf{Y} = [y_1, y_2, ... y_n]$, $b = b_0 + n$. 
 
 ### 1f:  Name your store, and the date and time.
 I will visit the Santa Monica REI on Friday, October 14 2016 and watch for people coming in between 10:15-10:20 AM.
@@ -250,7 +250,7 @@ For Prior 1, the simulated and calculated posterior Mean and SD were very close 
 
 \item{Relationship between Lambda5 and Lambda1}
 
-stuff
+$\lambda_5$ is the estimated rate of people entering the store per 5 minutes, whereas $\lambda_1$ is the rate of people entering the store per minute. So, the expectation is that $\lambda_5$ = $\lambda_1*5$. 
 
 \item{Prior mean of Lambda5 and Lambda1}  
 
@@ -277,19 +277,19 @@ $\beta_{\lambda_5} = \frac{1}{5}*\beta_{\lambda_1}$
 
 ### 2b: Give the two priors for the parameter lambda5 that correspond to your priors for lambda1  
 
-***Prior 1***
-$$\lambda_5 \sim Gamma(5*3*\frac{49}{9}, \frac{1}{5}*\frac{7}{9}) = Gamma(81.667,0.1556)$$
+***Prior 5.1***
+$$\lambda_5 \sim Gamma(\frac{49}{9}, \frac{1}{5}*\frac{7}{9}) = Gamma(5.444,0.1556)$$
 
-***Prior 2***
-$$\lambda_5 \sim Gamma(5*3*7, 3*1) = Gamma(105, 3)$$
+***Prior 5.2***
+$$\lambda_5 \sim Gamma(7, \frac{1}{2}*1) = Gamma(7, 2)$$
 
 ### 2c: Give the two resulting posteriors for lambda5 .
 
 ***Posterior 1***
-$$\lambda_5 \sim Gamma(5*3*\frac{49}{9} + 19, 3*\frac{7}{9} + 1) = Gamma(100.67,3.3333)$$
+$$\lambda_5 \sim Gamma(\frac{49}{9} + 19, \frac{1}{5}*\frac{7}{9} + 1) = Gamma(24.444,.1556)$$
 
 ***Posterior 2***
-$$\lambda_5 \sim Gamma(5*3*7 + 19, \frac{1}{5}*1+1) = Gamma(124, 1.2)$$
+$$\lambda_5 \sim Gamma(7 + 19, \frac{1}{5}*1+1) = Gamma(26, 1.2)$$
 
 ```{r echo = F}
 # Make these here- may be useful later on
@@ -308,14 +308,18 @@ beta5.2p = beta5.2 + 1 # insead of length(ys)
 ### 2d:  Explain the relationship between the posterior means of lambda5 and lambda1. Repeat for the posterior variance, posterior standard deviation,posterior a-parameters and finally posterior b parameters.
 
 ```{r, echo = F}
-posterior1a = c(alpha1p, beta1p, alpha1p/beta1p, alpha1p/beta1p^2)
-posterior1b = c(alpha2p, beta2p, alpha2p/beta2p, alpha2p/beta2p^2)
-posterior5a = c(alpha5.1p, beta5.1p, alpha5.1p/beta5.1p, alpha5.1p/beta5.1p^2)
-posterior5b = c(alpha5.2p, beta5.2p, alpha5.2p/beta5.2p, alpha5.2p/beta5.2p^2)
+posterior1a = c(alpha1p, beta1p, alpha1p/beta1p, alpha1p/beta1p^2, (alpha1p/beta1p^2)^2)
+posterior1b = c(alpha2p, beta2p, alpha2p/beta2p, alpha2p/beta2p^2, (alpha2p/beta2p^2)^2)
+posterior5a = c(alpha5.1p, beta5.1p, alpha5.1p/beta5.1p, alpha5.1p/beta5.1p^2, (alpha5.1p/beta5.1p^2)^2)
+posterior5b = c(alpha5.2p, beta5.2p, alpha5.2p/beta5.2p, alpha5.2p/beta5.2p^2, (alpha5.2p/beta5.2p^2)^2)
 
-rbind(posterior1a, posterior1b, posterior5a, posterior5b)
-
+to_print = rbind(posterior1a, posterior1b, posterior5a, posterior5b)
+colnames(to_print) = c("alpha", "beta", "mean", "sd", "var")
+rownames(to_print) = c("Lambda1a", "Lambda1b", "Lambda5a", "Lambda5b")
+knitr::kable(to_print, caption = "Parameters and moments for the four posterior distributions", digits = 3)
 ```
+
+Table 3 above shows that $\alpha$ parameters are equal for each $\lambda_1$ and its corresponding $\lambda_5$, and that the $\beta$ values for both $\lamdba_5$s are 1/5th of the corresponding $\lambda_1$ $\beta$s. This makes sense- since $\beta$ can be considered as an analogue of sample size, reducing the independent sample size from 5 to 1 would lead to this decrease. We see that mean of $\lambda_5$s is 5 times the mean of the corresponding $\lambda_1$. 
 
 ### 2e: Do you need to redraw your plots (of priors and posteriors) that you drew in the previous problem? How could you alter them without redrawing to make them conform to the new data structure?
 
@@ -324,13 +328,15 @@ We don't strictly need to redraw the plots of posteriors and priors, since the s
 ```{r, include = F}
 # Doing the plots for myself anyways
 dev.new()
-plot(density(rgamma(1000, alpha5.1p, beta5.1p)), main = "Posterior and Prior 1 for Lambda5", xlim = c(0, 70))
+plot(density(rgamma(1000, alpha5.1p, beta5.1p)), 
+     main = "Posterior and Prior 1 for Lambda5", xlim = c(0, 70))
 lines(density(rgamma(1000, alpha5.1, beta5.1)),lty = 2, col = "red")
 mean(rgamma(1000, alpha5.1p, beta5.1p))
 
 dev.new()
-plot(density(rgamma(1000, alpha5.2p, beta5.2p)), xlim = c(0, 70), main = "Posterior and Prior 2 for Lambda5")
-lines(density(rgamma(1000, alpha5.2, beta5.2)), lty = 2, col = "red")
+plot(density(rgamma(1000, alpha2p, beta2p)), xlim = c(0, 70),
+     main = "Posterior and Prior 2 for Lambda5")
+lines(density(rgamma(1000, alpha2, beta2)), lty = 2, col = "red")
 mean(rgamma(1000, alpha5.2p, beta5.2p))
 ```
 
