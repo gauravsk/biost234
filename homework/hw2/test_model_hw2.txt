@@ -1,0 +1,10 @@
+model {
+  # prior
+  lambda ~ dgamma(alpha, beta)
+  
+  for (i in 1:N){
+    x[i] ~ dpois(lambda)
+  }
+
+
+}
