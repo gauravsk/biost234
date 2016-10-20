@@ -12,29 +12,34 @@ library(R2jags); library(knitr)
 setwd("~/grad/courses/UCLA/biost234/homework/hw2")
 ```
 
-### 1a:  Algebraically derive the posterior p(lambda|y1) given a single observation y1. Specify your answer (a) in terms of a named distribution with parameters (ie Gamma(a, b), and specify a and b), and give the actual density formula.
+### 1a:  Algebraically derive the posterior p(lambda|y1) given a single observation y1. Specify your answer (a) in terms of a named distribution with parameters (ie Gamma(a, b)), and specify a and b), and give the actual density formula.
 
-\includegraphics{integrals/q1ap1}
-\includegraphics{integrals/q1ap2}
+***Note***: *The work for this question is shown in the Appendix to keep the body clean*
 
-\clearpage
+Our posterior p($\lambda$|$y_1$) ~ Gamma($\alpha+y$, $\beta+1$). 
+
+The density of this distribution is:  
+$$\frac{(\beta+1)^{(\alpha+y)} * \lambda^{(\alpha+1)} * e^{(-\lambda(\beta+1))}}{\Gamma(\alpha+y)}$$
 
 ### 1b:  What is the support (place where density/function is non-negative) of: (i) prior, (ii) posterior, (iii) sampling density, (iv) likelihood (v) prior predictive?  
-
-\clearpage
+The support for all of these is the space 0, $\infty$. 
 
 ### 1c:  Algebraically derive the posterior given a sample yi , i = 1,...,n of size n. Again specify it both in terms of a named distribution with parameters, and give the actual density formula.  
-\includegraphics{integrals/q1cp1}
-\includegraphics{integrals/q1cp2}
+***Note***: *The work for this question is shown in the Appendix to keep the body clean*
 
-\clearpage
+Given $\textbf{Y} = [y_1, y_2, ..., y_n]$ Our posterior p($\lambda$|$\textbf{Y}$) ~ Gamma($\alpha+\sum\limits_{i = 1}^{n}y_i$, $\beta+n$). 
+
+The density of this distribution is:  
+$$\frac{(\beta+n)^{(\alpha+\sum\limits_{i = 1}^{n}y_i)} * \lambda^{(\alpha+\sum\limits_{i = 1}^{n}y_i-1)} * e^{(-\lambda(\beta+n))}}{\Gamma(\alpha+\sum\limits_{i = 1}^{n}y_i)}$$
+
+
 
 ### 1d:  In the prior gamma(a, b), which parameter acts like a prior sample size? (Hint: look at the posterior from problem (1c), how does n enter into the posterior density?) You will need this answer inthe second part of problem 1(g)iv or you will do that problem incorrectly.
 
 In the prior gamma(a, b), the parameter $\beta$ approximates the prior sample size $s_0$. This is because the gamma prior for lambda when we have $\textbf{Y} = [y_1, y_2, ... y_n]$, $b = b_0 + n$. 
 
 ### 1f:  Name your store, and the date and time.
-I will visit the Santa Monica REI on Friday, October 14 2016 and watch for people coming in between 10:15-10:20 AM.
+I will visit the Santa Monica REI on Friday, October 14 2016 and watch for people coming in between 1:15-1:20 PM.
 
 ### 1g:  We are now going to specify the parameters a and b of the gamma prior density. 
 
@@ -48,7 +53,7 @@ We will do this in two different ways, giving two different priors. We designate
 
 \item Make a guess s0 of the prior sd associated with your estimate m0. This s0 is the standard deviation of the prior distribution for $\lambda$. Note: most people underestimate s0.
 
-\textbf{I estimate a standard deviation $s_0$ of 3 people}: sometimes nobody may come in (after all I am going right after opening time on a weekday); other times, a bunch may come in (this store is right by the Santa Monica promenade, so maybe lots of tourist groups?)
+\textbf{I estimate a standard deviation $s_0$ of 3 people}: sometimes nobody may come in (after all I am going on a weekday afternoon); other times, a big group may come in (this store is right by the Santa Monica promenade, so maybe lots of tourist groups?)
 
 \item  Separately from the previous question 1(g)ii, estimate how many data points n0 your prior guess is worth. That is, n0 is the number (strictly greater than zero) of data points (counts of 5 minutes) you would just as soon have as have your prior guess of m0.
 
@@ -75,31 +80,36 @@ The variance of this would also be 7, as $\frac{\alpha}{\beta^2}  = \frac{7}{1^2
 
 ### 1h:  Suppose we need to have a single prior, rather than two priors. Suggest 2 distinct methods to settle on a single prior.
 
-DO SOMETHING
+First, we might pick between the two priors by calculating the standard deviation from the second approach and, if the two SDs are distinct, ask ourselves which we believe more. If our estimate of $s_0$ seems more reasonable than that calculated by using $m_0$ and $n_0$, we might choose to stick with the former.
+
+Second, I would spend more time eliciting information from industry experts before setting my priors. I would ask them what an average number of customers entering per minute might be, and also ask for an estimate on the upper bound for the number of customers coming in. I would then use these expert estimates to settle on a single mean and a single SD and get the priors that way. 
+
+\clearpage
 
 ### 1i:  Go to your store and collect your data as instructed in 1e. Report it here.
 
 ```{r question1i, echo = F}
 ys = c(3,6,1,0,9)
 names(ys) = paste("Minute ", 1:5)
-knitr::kable(t(ys))
+knitr::kable(t(ys), align = "c")
 ```
+
 
 ### 1j:  Update both priors algebraically using your 5 data points. Give the two posteriors.
 
-***Prior 1***   
+***Prior 1a***   
 $$\alpha_{posterior} = \alpha_{prior} + \sum\limits_{i=1}^n y_i = \frac{49}{9}+3+6+1+0+9 = 24.444$$
 
 $$\beta_{posterior} = \beta_{prior} + n = \frac{7}{9}+5 = 5.778$$
 
-So, the posterior for prior 1 is of the form $Gamma(\alpha = 24.4444, \beta = 5.778)$
+So, the posterior for prior 1a is of the form $Gamma(\alpha = 24.4444, \beta = 5.778)$
 
-***Prior 2***   
+***Prior 1b***   
 $$\alpha_{posterior} = \alpha_{prior} + \sum\limits_{i=1}^n y_i = 7 +3+6+1+0+9 = 26$$
 
 $$\beta_{posterior} = \beta_{prior} + n = 1+5 = 6$$
 
-So, the posterior for prior 2 is of the form $Gamma(\alpha = 26, \beta = 6)$
+So, the posterior for prior 1b is of the form $Gamma(\alpha = 26, \beta = 6)$
 
 ```{r, echo = F}
 # Making this here so that it can be used later
@@ -114,58 +124,70 @@ beta2 = 1
 alpha2p = alpha2 + sum(ys)
 beta2p  = beta2 + length(ys)
 ```
+
 ### 1k:  Give the posterior mean and variance for your two posteriors.  
 
-***Prior 1***   
+***Prior 1a***   
 $$\mu_{posterior} = \frac{\alpha_{posterior}}{\beta_{posterior}} = \frac{24.4444}{5.778} = 4.231$$
 \bigskip
 $$Var_{posterior} = \frac{\alpha_{posterior}}{\beta_{posterior}^2} = \frac{24.4444}{5.778^2} = 0.732$$
 
+***Prior 1b***   
+$$\mu_{posterior} = \frac{\alpha_{posterior}}{\beta_{posterior}} = \frac{26}{6} = 4.33$$
+\bigskip
+$$Var_{posterior} = \frac{\alpha_{posterior}}{\beta_{posterior}^2} = \frac{26}{6^2} = 0.722$$
+
 ### 1l:  Plot your two prior densities on one graph. Plot your two posterior densities in another graph. In one sentence for each plot, compare the densities. 
 
-```{r, echo = F}
+```{r, echo = F, fig.height=4}
+par(mfrow = c(1,2))
 curve(dgamma(x, shape = alpha1, rate = beta1), 0, 20, ylab = "Density", 
-      main = "Gamma priors", ylim = c(0, .2), xlab = "Gamma")
+      main = "Lambda priors", ylim = c(0, .2), xlab = "Lambda")
 curve(dgamma(x, shape = alpha2, rate = beta2), 0, 20, ylab = "Density", 
-      main = "Gamma priors", add = T, col = "red", lty = 2)
+      add = T, col = "red", lty = 2)
 legend("topright", lty = c(1, 2), col = c("black", "red"), 
-       legend = c("Prior 1", "Prior 2"), bty = "n")
+       legend = c("Prior 1a", "Prior 1b"), bty = "n")
 
 
 
 ## Posteriors
 curve(dgamma(x, shape = alpha1p, rate = beta1p), 0, 20, ylab = "Density", 
-      main = "Gamma priors", xlab = "Gamma")
+      main = "Lambda priors", xlab = "Lambda")
 curve(dgamma(x, shape = alpha2p, rate = beta2p), 0, 20, ylab = "Density", 
-      main = "Gamma priors", add = T, col = "red", lty = 2)
+      add = T, col = "red", lty = 2)
 legend("topright", lty = c(1, 2), col = c("black", "red"), 
-       legend = c("Posterior 1", "Posterior 2"), bty = "n")
+       legend = c("Posterior 1a", "Posterior 1b"), bty = "n")
 ```
+
+Both prior densities are centered around the prior mean of 7 and are fairly wide (prior sd = 3); prior 1b is slightly to the right of prior 1a (higher mean). Both posterior densities are centered around a lower mean of ~4.5 and are much narrower (low posterior SD); again, posterior 1b is slightly to the right of posterior 1a (due to the priors).
 
 ### 1m:  Plot each prior density/posterior density pair on the same graph. For each plot, compare the two densities in one sentence.
 
 ```{r, echo = F, fig.height=4}
+par(mfrow = c(1,2))
 curve(dgamma(x, shape = alpha1p, rate = beta1p), 0, 20, ylab = "Density", 
-      main = "Prior 1 and Posterior", xlim = c(0, 20), xlab = "Gamma")
+      main = "Prior 1a and Posterior", xlim = c(0, 20), xlab = "Gamma")
 curve(dgamma(x, shape = alpha1, rate = beta1), 0, 20, col = "blue", lty =  2, add = T,
       ylab = "Density")
 
 legend("topright", col = c("black", "blue"), lty = c(1,2),
-       legend = c("Posterior 1", "Prior 1"), bty = "n")
+       legend = c("Posterior 1a", "Prior 1a"), bty = "n")
 
 
 curve(dgamma(x, shape = alpha2p, rate = beta2p), 0, 20, ylab = "Density", 
-      main = "Prior 2 and Posterior", xlim = c(0, 20), xlab = "Gamma")
+      main = "Prior 1b and Posterior", xlim = c(0, 20), xlab = "Gamma")
 curve(dgamma(x, shape = alpha2, rate = beta2), 0, 20, col = "blue", lty =  2, add = T,
       ylab = "Density")
 
 legend("topright", col = c("black", "blue"), lty = c(1,2),
-       legend = c("Posterior 2", "Prior 2"), bty = "n")
+       legend = c("Posterior 1b", "Prior 1b"), bty = "n")
 ```
+
+In both cases, the prior has a higher mean and standard deviation than the posterior mean: this means that I probaby overestimated the popularity of REI. 
 
 ### 1n:  Use WinBUGS (twice) to update your two priors with your data to get your two posteriors. Compare summary statistics between the two posteriors.
 
-```{r, eval = F}
+```{r, eval = F, results = "hide"}
 # Write the model
 sink("model_hw2.txt")
 cat("model {
@@ -181,6 +203,7 @@ cat("model {
 sink()
 ```
 
+I have used the JAGS model above, along with appropriately set priors, the dataset, and N, to simulate the two posteriors. 
 
 ```{r, echo = F}
 # Set up parameters, initial value for lambda, and data:
@@ -201,7 +224,7 @@ jags.inits = function(){
 ```
 
 
-```{r, echo = F}
+```{r, echo = F, results="hide"}
 # Run the simulation with the first set of priors:  
 
 hw2.sim1 = jags(jags.data, jags.inits, jags.params, 
@@ -215,32 +238,48 @@ jags.data = list("x", "N", "alpha", "beta")
 hw2.sim2 = jags(jags.data, jags.inits, jags.params, 
               model.file = "model_hw2.txt", 
               n.chains = 3, n.iter = 51000, n.burnin = 1000)
-
-plot(density(hw2.sim1$BUGSoutput$sims.array[,,2]), col = "red", xlim = c(0, 20),
-     xlab = "Rate (people per minute)", main = "JAGS simulation of Posterior assuming Priors 1")
-
-# Rerun with priors 2
-plot(density(hw2.sim2$BUGSoutput$sims.array[,,2]), col = "red", xlim = c(0, 20),
-     xlab = "Rate (people per minute)", main = "JAGS simulation of Posterior 1 assuming Priors 2")
-
 ```
 
+We can compare the two posteriors graphically and in a table:
+
+```{r, echo = F, fig.height = 4}
+plot(density(hw2.sim1$BUGSoutput$sims.array[,,2]), xlim = c(0, 20),
+     xlab = "Rate (people per minute)", main = "JAGS simulation of Posteriors 1a and 1b")
+
+# Rerun with priors 2
+lines(density(hw2.sim2$BUGSoutput$sims.array[,,2]), col = "red", xlim = c(0, 20), lty = 2,
+     xlab = "Rate (people per minute)")
+legend("topright", lty = c(1,2), col = c("black", "red"), legend = c("Posterior 1a", "Posterior 1b"))
+```
+
+```{r, echo = F}
+sim1_summary = hw2.sim1$BUGSoutput$summary["lambda", c("mean", "sd", "2.5%", "97.5%")]
+sim2_summary = hw2.sim2$BUGSoutput$summary["lambda", c("mean", "sd", "2.5%", "97.5%")]
+to_print = rbind(sim1_summary, sim2_summary)
+rownames(to_print) = c("Posterior 1", "Posterior 1b")
+knitr::kable(to_print, caption = "Summary of simulations of two posteriors", digits = 3)
+```
+
+We see above that both simulations have very similar values of posterior mean, posterior SD, and CI, and below we will see that the simulated metrics are very close to the algebraic estimates.
 
 ### 1o:  How close are the WinBUGS numerical calculations to the actual algebraically calculated posterior means?   
 
 ```{r, echo = F}
-post1_calc <- c(alpha1p/beta1p, NA, NA, sqrt(alpha1p/beta1p^2))
+post1_calc <- c(alpha1p/beta1p, alpha1p/beta1p - 2*sqrt(alpha1p/beta1p^2), 
+                alpha1p/beta1p + 2*sqrt(alpha1p/beta1p^2), sqrt(alpha1p/beta1p^2))
 post1_sims <- (hw2.sim1$BUGSoutput$summary["lambda",c("mean", "2.5%", "97.5%", "sd")])
-post2_calc <- c(alpha2p/beta2p, NA, NA, sqrt(alpha2p/beta2p^2))
+post2_calc <- c(alpha2p/beta2p, alpha2p/beta2p - 2*sqrt(alpha2p/beta2p^2),
+                alpha2p/beta2p + 2*sqrt(alpha2p/beta2p^2), sqrt(alpha2p/beta2p^2))
 post2_sims <- (hw2.sim2$BUGSoutput$summary["lambda",c("mean", "2.5%", "97.5%", "sd")])
 to_print <- rbind(post1_calc, post1_sims, post2_calc, post2_sims)
 row.names(to_print) = c("Calculated Posterior 1", "Simulated Posterior 1", 
                         "Calculated Posterior 2", "Simulated Posterior 2")
-kable(to_print, caption = "Comparing calculted vs. simulated Posterior statistics", digits = 4)
+kable(to_print, caption = "Comparing calculted vs. simulated Posterior statistics", digits = 3)
 ```
 
-For Prior 1, the simulated and calculated posterior Mean and SD were very close ($10^{-3}$ accuracy) to the algebraically calculated Mean and SD. That said, the 95% CI around the mean was quite wide in the simulations, ranging from 50% to 150% of the calculated mean.
+For both priors, the simulated and calculated posterior Mean and SD were very close ($10^{-3}$ accuracy) to the algebraically calculated Mean and SD. That said, the 95% CI around the mean was quite wide in the simulations, ranging from 50% to 150% of the calculated mean.
 
+\clearpage
 
 ## Question 2  
 
@@ -278,18 +317,18 @@ $\beta_{\lambda_5} = \frac{1}{5}*\beta_{\lambda_1}$
 ### 2b: Give the two priors for the parameter lambda5 that correspond to your priors for lambda1  
 
 ***Prior 5.1***
-$$\lambda_5 \sim Gamma(\frac{49}{9}, \frac{1}{5}*\frac{7}{9}) = Gamma(5.444,0.1556)$$
+$$\lambda_5 \sim Gamma\left(\alpha = \frac{49}{9}, \beta = \frac{1}{5}*\frac{7}{9}\right) = Gamma(5.444, 0.1556)$$
 
 ***Prior 5.2***
-$$\lambda_5 \sim Gamma(7, \frac{1}{2}*1) = Gamma(7, 2)$$
+$$\lambda_5 \sim Gamma\left(\alpha = 7, \beta = \frac{1}{5}*1\right) = Gamma(7, 0.2)$$
 
 ### 2c: Give the two resulting posteriors for lambda5 .
 
 ***Posterior 1***
-$$\lambda_5 \sim Gamma(\frac{49}{9} + 19, \frac{1}{5}*\frac{7}{9} + 1) = Gamma(24.444,.1556)$$
+$$\lambda_5 \sim Gamma\left(\frac{49}{9} + 19, \frac{1}{5}*\frac{7}{9} + 1\right) = Gamma(24.444,1.1556)$$
 
 ***Posterior 2***
-$$\lambda_5 \sim Gamma(7 + 19, \frac{1}{5}*1+1) = Gamma(26, 1.2)$$
+$$\lambda_5 \sim Gamma\left(7 + 19, \frac{1}{5}*1+1\right) = Gamma(26, 1.2)$$
 
 ```{r echo = F}
 # Make these here- may be useful later on
@@ -319,7 +358,7 @@ rownames(to_print) = c("Lambda1a", "Lambda1b", "Lambda5a", "Lambda5b")
 knitr::kable(to_print, caption = "Parameters and moments for the four posterior distributions", digits = 3)
 ```
 
-Table 3 above shows that $\alpha$ parameters are equal for each $\lambda_1$ and its corresponding $\lambda_5$, and that the $\beta$ values for both $\lamdba_5$s are 1/5th of the corresponding $\lambda_1$ $\beta$s. This makes sense- since $\beta$ can be considered as an analogue of sample size, reducing the independent sample size from 5 to 1 would lead to this decrease. We see that mean of $\lambda_5$s is 5 times the mean of the corresponding $\lambda_1$. 
+Table 4 above shows that $\alpha$ parameters are equal for each $\lambda_1$ and its corresponding $\lambda_5$ , and that the $\beta$ values for both $\lambda_5$s are 1/5th of the corresponding $\lambda_1$ $\beta$s. This makes sense- since $\beta$ can be considered as an analogue of sample size, reducing the independent sample size from 5 to 1 would lead to this decrease. We see that mean of $\lambda_5$s is 5 times the mean of the corresponding $\lambda_1$. 
 
 ### 2e: Do you need to redraw your plots (of priors and posteriors) that you drew in the previous problem? How could you alter them without redrawing to make them conform to the new data structure?
 
@@ -342,3 +381,17 @@ mean(rgamma(1000, alpha5.2p, beta5.2p))
 
 ### 2f: Do your conclusions change if you consider your data as a single 5 minute observation or as 5 one minute observations? That is, do your recommendations to the store on staffing levels change?
 
+My recommendations do somewhat change based on which type of data I work with (5 x 1 minute datapoints or 1 x 5 minute datapoint): I'd recommend that REI ought to have enough staff on hand to handle a mean of 240 customers per hour on Friday afternoons, but if I am working only with 1 datapoint, I might suggest that they also have enough staff on hand to handle a surge in visits (high standard deviation in rate). 
+
+
+## Appendix
+
+### Question 1a
+\includegraphics{integrals/q1ap1}
+
+\includegraphics{integrals/q1ap2}
+
+### Question 1c
+\includegraphics{integrals/q1cp1}
+
+\includegraphics{integrals/q1cp2}
