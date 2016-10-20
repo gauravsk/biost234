@@ -1,6 +1,6 @@
 ---
 title: "Homework 2"
-author: "Gaurav Kandlikar"
+author: "Gaurav Kandlikar & Marcel Vaz"
 date: "October 14, 2016"
 output: pdf_document
 ---
@@ -82,7 +82,7 @@ The variance of this would also be 7, as $\frac{\alpha}{\beta^2}  = \frac{7}{1^2
 
 First, we might pick between the two priors by calculating the standard deviation from the second approach and, if the two SDs are distinct, ask ourselves which we believe more. If our estimate of $s_0$ seems more reasonable than that calculated by using $m_0$ and $n_0$, we might choose to stick with the former.
 
-Second, I would spend more time eliciting information from industry experts before setting my priors. I would ask them what an average number of customers entering per minute might be, and also ask for an estimate on the upper bound for the number of customers coming in. I would then use these expert estimates to settle on a single mean and a single SD and get the priors that way. 
+Second, I would spend more time eliciting information from industry experts before setting my priors. I would ask them what an average number of customers entering per minute might be, and also ask for an estimate on the upper bound for the number of customers coming in. I might then treat this "upper bound" as a 95% interval and calculate $\alpha$ and $\beta$. 
 
 \clearpage
 
@@ -382,7 +382,6 @@ mean(rgamma(1000, alpha5.2p, beta5.2p))
 ### 2f: Do your conclusions change if you consider your data as a single 5 minute observation or as 5 one minute observations? That is, do your recommendations to the store on staffing levels change?
 
 My recommendations do somewhat change based on which type of data I work with (5 x 1 minute datapoints or 1 x 5 minute datapoint): I'd recommend that REI ought to have enough staff on hand to handle a mean of 240 customers per hour on Friday afternoons, but if I am working only with 1 datapoint, I might suggest that they also have enough staff on hand to handle a surge in visits (high standard deviation in rate). 
-
 
 ## Appendix
 
