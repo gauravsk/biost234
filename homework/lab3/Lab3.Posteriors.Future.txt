@@ -1,0 +1,33 @@
+
+model{
+
+  # Restate the priors
+	pie[1]~dbeta(1.1,8.5)
+	pie[2]~dbeta(3.0,11.0)
+	pie[3]~dbeta(5.9,1.7)
+	pie[4]~dbeta(1.3,12.9)
+	pie[5]~dbeta(1.1,4.9)
+	pie[6]~dbeta(1.5,5.5)
+
+  # Convert from log odds to odds, or whatever
+	for(j in 1:6){
+		logitp[j]<-logit(pie[j])
+	}
+
+  	betas <- invXp %*% logitp[]
+
+	  # NOTE: This is where the data is modeled!:
+
+		for(i in 1:T){
+		y[i] ~ dbern(p[i])
+		p[i]<-ilogit(inprod(x[i,],betas[]))
+		}
+		
+    # Using the posterior predictive to estimate survivial prob:
+    futurefit1 <- ilogit(inprod(c(1,2,7.55,25,0,0),betas[]))
+    futurefit2 <- ilogit(inprod(people[2,],betas[]))
+    futurefit3 <- ilogit(inprod(people[3,],betas[]))
+    
+
+}
+  
