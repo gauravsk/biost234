@@ -1,0 +1,163 @@
+---
+title: "Lab 4 Submission"
+author: "Gaurav Kandlikar and Marcel Vaz"
+date: "October 25, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits = 3)
+setwd("~/grad/courses/UCLA/biost234/homework/lab4/")
+library(R2jags)
+load("../lab3/AddBurnin.RData")
+library(lattice)
+library(knitr)
+
+mysummary = function(invector) {
+c(mean(invector), sd(invector), quantile(invector, .025), 
+	quantile(invector,.975),
+	length(invector[invector>0])/length(invector))
+}
+
+# load the data.  
+
+load("lab4_data.RData")
+```
+
+```{r run models 1 and 2, include = F, echo = T, cache = T}
+run1 = jags(priordata, inits, parameters, "lab4model.txt", n.chains=5, n.iter=11000, n.burnin=0, n.thin=1)
+Output1=AddBurnin(run1$BUGSoutput$sims.array,burnin=1000,n.thin=1)
+
+# T
+parameters = c("alpha", "alphasign", "tau.e", "tau.b", "sigma", "sqrtD", "rho", "beta[1:5]", "y[4,3:4]", "df1", "df2") 
+run2 = jags(priordata, inits, parameters, "lab4model.T.txt",  n.chains=5, n.iter=11000, n.burnin=0, n.thin=1)
+Output2 = AddBurnin(run2$BUGSoutput$sims.array,burnin=1000,n.thin=1)
+
+# Output2$Burnin.Summary
+```
+
+## q1: Turn in results from the t-model.  Be sure to run sufficient iterations.  
+
+### a: How is the convergence?  Show an illustrative autocorrelation function and time-series plot for two parameters of interest.
+
+We ran the t-model with 11000 reps. Looking at the autocorrelation plots across all parameters suggests that this is sufficient for most of the alphas, but the ACF plots for alpha[1] and alpha[2] might leave something to be desired. Autocorrelation plots and traces for alpha[3] (AA) and alpha[8] (DN) are shown below
+
+```{r q1a, autocorrelation plots, echo = F, fig.height=3}
+temp2= Output2$Burnin.sims.array
+
+
+par(mfrow = c(1,2))
+acf(temp2[,1,"alpha[3]"], main="") 
+mtext("alpha[3] Autocorrelation plot",side=3, line=1, cex=.8)
+plot(1:1000,temp2[1:1000,1,"alpha[3]"], type="l", xlab="iteration", ylab="", lwd = 0.5)  
+lines(1:1000,temp2[1:1000,2,"alpha[3]"], type="l", xlab="iteration", ylab="", col = 2, lwd = 0.5)  
+lines(1:1000,temp2[1:1000,3,"alpha[3]"], type="l", xlab="iteration", ylab="", col = 3, lwd = 0.5)  
+lines(1:1000,temp2[1:1000,4,"alpha[3]"], type="l", xlab="iteration", ylab="", col = 4, lwd = 0.5)  
+lines(1:1000,temp2[1:1000,5,"alpha[3]"], type="l", xlab="iteration", ylab="", col = 5, lwd = 0.5)  
+mtext("alpha[3] time series", side=3, line=1, cex=.8)
+
+
+par(mfrow = c(1,2))
+acf(temp2[,1,8], main="") 
+mtext("alpha[8] Autocorrelation plot",side=3, line=1, cex=.8)
+plot(1:1000,temp2[1:1000,1,"alpha[8]"], type="l", xlab="iteration", ylab="", lwd = 0.5)  
+lines(1:1000,temp2[1:1000,2,"alpha[8]"], type="l", xlab="iteration", ylab="", col = 2, lwd = 0.5)  
+lines(1:1000,temp2[1:1000,3,"alpha[8]"], type="l", xlab="iteration", ylab="", col = 3, lwd = 0.5)  
+lines(1:1000,temp2[1:1000,4,"alpha[8]"], type="l", xlab="iteration", ylab="", col = 4, lwd = 0.5)  
+lines(1:1000,temp2[1:1000,5,"alpha[8]"], type="l", xlab="iteration", ylab="", col = 5, lwd = 0.5)  
+mtext("alpha[8] time series", side=3, line=1, cex=.8)
+
+```
+
+### b. Turn in a table of results for the fixed effects, the two standard deviations SqrtD and sigma, and the two degrees of freedom parameters.
+
+```{r q1b, echo = F}
+temp = Output2$Burnin.Summary
+temp2 = Output1$Burnin.Summary
+desired_rows = c(paste0("alpha[", 1:8, "]"), "sigma", "sqrtD", "df1", "df2")
+to_print = temp[desired_rows, ]
+to_print2 = temp2[c(paste0("alpha[", 1:8, "]"), "sigma", "sqrtD"), ]
+
+colnames(to_print) = c("mean", "sd","2.5%", "97.5%", "P>0")
+kable(to_print)
+```
+
+
+### 2. Compare the results from the normal model to the results from the t model:  What changes are there?  In particular, what scientific conclusions change?
+
+On the whole, the means and standard deviations of parameter estimates from the t-model are comprable to those from the normal model, but there are a few important differences.  
+
+\begin{itemize}  
+\item The mean of alpha[2] has been reduced from ~0.329 in the Normal model to ~0.26 in the t-model. The standard deviation is largely unchanged. This suggests that the "benefit" of being a distracter is less dramatic than estimated by the normal model
+\item The mean of alpha[7] has been reduced from ~0.39 in the Normal model to ~0.21 in the t-model. This suggests that the benefit of teaching distractors to distract may be less dramatic than estimated by the normal model. 
+\item The 95CI of alpha[6] spanned 0 in the normal model, but is completely negative in the t-model. This suggests that teaching distracters to attend strongly reduces their pain tolerance (on this scale)
+\end{itemize}
+
+### 3. Reproduce figures 1-5 (see below for the normal model figures) for your t model. Label your figures appropriately. 
+
+```{r figures1, echo = F}
+to_plot = Output2$Burnin.sims.matrix
+# Plot 1
+par(mfrow = c(1,1))
+plot(density((to_plot[,"y[4,3]"])), xlim = c(0, 14), ylim = c(0, 4), lwd = 1.5, xlab = "ln(time) (seconds)", main = "")
+lines(density((to_plot[,"y[4,4]"])), col = "red", lwd = 1.5, lty = 2)
+legend("topright", col = c(1,2), legend = c('y[4,3]','y[4,4]'), bty = 'n', lty = c(1,2))
+title("1. Predictions for tolerances of Individual 4 (exponential scale)")
+
+
+# Plot 2
+plot(density(exp(to_plot[,c("alpha[1]")] + 
+               to_plot[,c("alpha[2]")])), ylim = c(0, .17), 
+     main = "Baseline pain threshold")
+lines(density(exp(to_plot[,c("alpha[1]")])), col = "red", lty = 2, lwd = 1.5)
+legend("topright", col = c(1,2), legend = c('Distractor','Attender'), bty = 'n', lty = c(1,2), lwd = 2)
+```
+
+```{r figures2, fig.height=4, echo=FALSE}
+
+# Plot 3
+# Treatment effect for attenders
+# Log scale
+par(mfrow = c(1,2), oma = c(0,0,4,0), mar = c(5,3,1,0))
+plot(density((to_plot[, "alpha[3]"])), main = "Effects on attenders", xlab = "ln(seconds)", lty = 1)
+lines(density((to_plot[,"alpha[4]"])), col = "red", lty = 2)
+lines(density((to_plot[,"alpha[5]"])), col = "blue", lty = 4)
+
+plot(density((to_plot[, "alpha[6]"])), main = "Effects on distracters", xlab = "ln(seconds)", lty = 1, xlim = c(-1, 1.5))
+lines(density((to_plot[,"alpha[7]"])), col = "red", lty = 2)
+lines(density((to_plot[,"alpha[8]"])), col = "blue", lty = 4)
+legend("topright", col = c("black", "red", "blue"), legend = c("attend", "distract", "null"), lty = c(1,2,4), bty = "n", cex = 0.8)
+
+title("3. Treatment effect by personality (exponential scale)", outer = T)
+
+# Plot 4
+# Multiplicative scale
+par(mfrow = c(1,2), oma = c(0,0,4,0), mar = c(5,3,1,0))
+plot(density(exp(to_plot[, "alpha[3]"])), main = "Effects on attenders", xlab = "seconds", ylim = c(0, 4), lty = 1)
+lines(density(exp(to_plot[,"alpha[4]"])), col = "red", lty = 2)
+lines(density(exp(to_plot[,"alpha[5]"])), col = "blue", lty = 4)
+
+plot(density(exp(to_plot[, "alpha[6]"])), main = "Effects on distracters", xlab = "seconds", xlim = c(0,2.5), lty = 1)
+lines(density(exp(to_plot[,"alpha[7]"])), col = "red", lty = 2)
+lines(density(exp(to_plot[,"alpha[8]"])), col = "blue", lty = 4)
+title("4. Treatment effect by personality (multiplicative scale)", outer = T)
+legend("topright", col = c("black", "red", "blue"), legend = c("attend", "distract", "null"), lty = c(1,2,4), bty = "n", cex = 0.8)
+
+# Plot 5
+# Difference
+par(mfrow = c(1,2), oma = c(0,0,4,0), mar = c(5,3,1,0))
+plot(density((to_plot[, "alpha[4]"]-to_plot[,"alpha[3]"])), main = "Differences for attenders", xlab = "seconds", ylim = c(0, 3), lty = 1)
+lines(density((to_plot[,"alpha[4]"]-to_plot[,"alpha[5]"])), col = "red", lty = 2)
+lines(density((to_plot[,"alpha[3]"]-to_plot[,"alpha[5]"])), col = "blue", lty = 4)
+legend("topleft", col = c("black", "red", "blue"), legend = c("D-A", "D-N", "A-N"), lty = c(1,2,4), bty = "n", cex = 0.8)
+
+plot(density((to_plot[, "alpha[7]"]-to_plot[,"alpha[6]"])), main = "Differences for attenders", xlab = "seconds", ylim = c(0, 2.5), xlim = c(-1.5, 1.75), lty = 1)
+lines(density((to_plot[,"alpha[7]"]-to_plot[,"alpha[8]"])), col = "red", lty = 2)
+lines(density((to_plot[,"alpha[6]"]-to_plot[,"alpha[8]"])), col = "blue", lty = 4)
+title("5. Differences in treatment effect by personality (exponential scale)" ,outer = T)
+```
+
+
+### 4. Invent another prior for the df, and in one sentence explain its properties (ie support, mean, sd or other characteristics) and why it is better than the above prior.  
+We suggest the prior $df ~ 2+Gamma(\frac{61^2}{230}, \frac{61}{230})$. This prior has a minimum value of 2 (Gamma distribution is bounded at 0, and we add two to all values), a mean of 63 (which is close to n-1 for our dataset), and a standard deviation of 230 (which is the standard deviation of our first uniform prior). This may be a better prior because it pushes the mean towards our known sample size but still allows for a very wide range of dfs. 

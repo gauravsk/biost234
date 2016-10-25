@@ -1,0 +1,41 @@
+
+model
+        {               
+                for( i in 1 : 64 ) { # Foreach kid
+                        for( j in 1 : 4 ) { # For each measurement
+                            s[i, j]<-4*(i-1)+j # Get the row for the current kid at the current time
+                            # y[i, j] ~ dnorm(mu[i , j],tau.e) # Sample for this kid at this time
+                              y[i,j] ~ dt( mu[i,j] , tau.e, df1)
+                              mu[i , j] <- inprod(x[s[i,j],],alpha[])+beta[i] # sample for the kid
+                        }
+                        # beta[i]~dnorm(0, tau.b) # For each kid, there is a Beta
+                        beta[i]~dt(0, tau.b, df2) # For each kid, there is a Beta
+                        
+
+                }
+
+df1 <- 1/invdf1
+invdf1 ~ dunif(0,.5)
+df2 <- 1/invdf1
+invdf2 ~ dunif(0,.5)
+
+# Set up priors for alpha
+for( k in 1:8) {
+                alpha[k]~dnorm(m[k],varinv[k]) # sample a prior for alpha from the distribution
+                alphasign[k] <- step(alpha[k]) # Get the sign of alpha (1 for +ve; 0 for -ve)
+}
+
+                tau.e ~ dgamma(ea,eb) # Sample from prior for error
+                tau.b~dgamma(ba,bb)   # Sample from prior for beta
+                
+                # Transform taus to sigmas
+                sigma <- 1 /sqrt( tau.e) 
+                sqrtD <- 1 /sqrt( tau.b)
+                # Rho is something we can look at if we are more interested in variances 
+                # than in the estimates of coefficients
+                # variance within groups/variance overall? idk How much of the variance explained by group
+                rho <- sqrtD*sqrtD/(sigma*sigma + sqrtD *sqrtD)
+
+        }
+
+    
